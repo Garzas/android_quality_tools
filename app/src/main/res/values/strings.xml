@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">DebugUtils</string>
+    <string name="search_hint">Type title</string>
+</resources>

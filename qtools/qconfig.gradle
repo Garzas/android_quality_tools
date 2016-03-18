@@ -1,0 +1,335 @@
+import java.awt.Desktop
+
+apply plugin: 'jacoco'
+apply plugin: "com.github.kt3k.coveralls"
+apply plugin: 'pmd'
+apply plugin: 'checkstyle'
+apply plugin: 'findbugs'
+
+def allowFailure = project.hasProperty('allowFailure')
+def checkstyleFailStatus = false
+
+jacoco {
+    version = '0.7.1.201405082137'
+}
+
+findbugs {
+    toolVersion = "3.0.0"
+}
+
+//set up when Java Code Coverage have to fail the build
+ext {
+    limits = [
+            'instruction': 70,
+            'branch'     : 0,
+            'line'       : 0,
+            'complexity' : 0,
+            'method'     : 0,
+            'class'      : 12
+    ]
+}
+
+//findbugs configuration
+task qFindBugs(type: FindBugs) {
+    ignoreFailures = allowFailure
+    effort = "max"
+    reportLevel = "medium"
+    excludeFilter = new File("${project.rootDir}/qtools/findbugs/findbugs-filter.xml")
+    classes = files("${project.rootDir}/app/build/intermediates/classes")
+    dependsOn 'check'
+    source 'src'
+    include '**/*.java'
+    exclude '**/gen/**'
+    classpath = files()
+
+    reports {
+        xml.enabled = false
+        html.enabled = true
+        xml {
+            destination "$project.buildDir/reports/findbugs/findbugs.xml"
+        }
+        html {
+            destination "$project.buildDir/reports/findbugs/findbugs.html"
+        }
+    }
+}
+
+//Checkstyle configuration
+task qCheckStyle(type: Checkstyle) {
+    ignoreFailures = allowFailure
+    configFile file("${project.rootDir}/qtools/checkstyle/checkstyle.xml")
+    configProperties.checkstyleSuppressionsPath = file("${project.rootDir}/qtools/checkstyle/suppressions.xml").absolutePath
+    source 'src'
+    include '**/*.java'
+    exclude '**/gen/**'
+    classpath = files()
+    dependsOn 'qFindBugs'
+}
+
+//checkstyle conversion to html
+task checkstyleHtml << {
+    ant.xslt(in: "$project.buildDir/reports/checkstyle/qCheckStyle.xml",
+            style: file("${project.rootDir}/qtools/checkstyle/checkstyle-noframes-sorted.xsl"),
+            out: new File("$project.buildDir/reports/checkstyle/", 'checkstyle.html'))
+}
+qCheckStyle.finalizedBy checkstyleHtml
+
+
+//PMD configuration
+task qPmd(type: Pmd) {
+    ignoreFailures = allowFailure
+    ruleSetFiles = files("${project.rootDir}/qtools/pmd/pmd-ruleset.xml")
+    ruleSets = []
+    dependsOn 'qCheckStyle'
+    source 'src'
+    include '**/*.java'
+    exclude '**/gen/**'
+
+    reports {
+        xml.enabled = false
+        html.enabled = true
+        xml {
+            destination "$project.buildDir/reports/pmd/pmd.xml"
+        }
+        html {
+            destination "$project.buildDir/reports/pmd/pmd.html"
+        }
+    }
+}
+
+//JaCoCo configuration for android tests and java tests
+if (project.plugins.hasPlugin('com.android.library') ||
+        project.plugins.hasPlugin('com.android.application')) {
+
+    android {
+        buildTypes {
+            debug {
+                minifyEnabled false
+                testCoverageEnabled = true
+            }
+        }
+    }
+
+    project.afterEvaluate {
+        // Grab all build types and product flavors
+        def buildTypes = android.buildTypes.collect { type -> type.name }
+        def productFlavors = android.productFlavors.collect { flavor -> flavor.name }
+
+        // When no product flavors defined, use empty
+        if (!productFlavors) productFlavors.add('')
+
+        productFlavors.each { productFlavorName ->
+            //added filter for ignoring variant.filter case
+            buildTypes.findAll {
+                (it.equals('debug') && (productFlavorName.equals('dev') || productFlavorName.equals('')))
+            }.each { buildTypeName ->
+                def sourceName, sourcePath
+                if (!productFlavorName) {
+                    sourceName = sourcePath = "${buildTypeName}"
+                } else {
+                    sourceName = "${productFlavorName}${buildTypeName.capitalize()}"
+                    sourcePath = "${productFlavorName}/${buildTypeName}"
+                }
+
+                def coverageSourceDirs = [
+                        "src/main/java",
+                        "src/$productFlavorName/java",
+                        "src/$buildTypeName/java"
+                ]
+
+                filterCoverageDirectories(coverageSourceDirs, "${sourceName}", "${sourcePath}")
+            }
+        }
+    }
+
+} else {
+    project.afterEvaluate {
+        def coverageSourceDirs = ["src/main/java"]
+        filterCoverageDirectories(coverageSourceDirs)
+
+    }
+}
+
+//JaCoco reports
+def coverageRaport(coverageTaskName) {
+
+    def report = file("${jacoco.reportsDir}/${coverageTaskName}/${coverageTaskName}.xml")
+    def reportUrl = "file://${jacoco.reportsDir}/${coverageTaskName}/html/index.html"
+
+    logger.lifecycle("Checking coverage results: ${report}")
+
+    def parser = new XmlParser()
+    parser.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+    parser.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false)
+    def results = parser.parse(report)
+
+    def percentage = {
+        def covered = it.'@covered' as Double
+        def missed = it.'@missed' as Double
+        ((covered / (covered + missed)) * 100).round(2)
+    }
+
+    def counters = results.counter
+    def metrics = [:]
+    metrics << [
+            'instruction': percentage(counters.find {
+                it.'@type'.equals('INSTRUCTION')
+            }),
+            'branch'     : percentage(counters.find {
+                it.'@type'.equals('BRANCH')
+            }),
+            'line'       : percentage(counters.find {
+                it.'@type'.equals('LINE')
+            }),
+            'complexity' : percentage(counters.find {
+                it.'@type'.equals('COMPLEXITY')
+            }),
+            'method'     : percentage(counters.find {
+                it.'@type'.equals('METHOD')
+            }),
+            'class'      : percentage(counters.find {
+                it.'@type'.equals('CLASS')
+            })
+    ]
+
+    def failures = []
+    metrics.each {
+        def limit = limits[it.key]
+        if (it.value < limit) {
+            failures.add("- ${it.key} coverage rate is: ${it.value}%, minimum is ${limit}%")
+        }
+    }
+
+    if (failures) {
+        logger.quiet("------------------ Code Coverage Failed -----------------------")
+        failures.each {
+            logger.quiet(it)
+        }
+        logger.quiet("---------------------------------------------------------------")
+        java.awt.Desktop.getDesktop().browse(new URL(reportUrl.toString()).toURI())
+        throw new GradleException("Code coverage failed")
+    } else {
+        logger.quiet("Passed Code Coverage Checks")
+    }
+
+}
+
+
+def filterCoverageDirectories(coverageSourceDirs, sourceName = 'test', sourcePath = 'main') {
+
+    def testTaskName
+    def coverageTaskName
+    def mDir, reportBuild
+
+    if (sourceName == 'test') {
+        mDir = "${project.buildDir}/classes/main"
+        reportBuild = project.name
+        testTaskName = "test"
+        coverageTaskName = "${reportBuild}Coverage"
+    } else {
+        mDir = "${project.buildDir}/intermediates/classes/${sourcePath}"
+        reportBuild = "${sourceName.capitalize()}"
+        testTaskName = "test${reportBuild}UnitTest"
+        coverageTaskName = "${testTaskName}Coverage"
+    }
+
+
+    task "${coverageTaskName}"(type: JacocoReport, dependsOn: "$testTaskName") {
+        group = "Reporting"
+        description = "Generate Jacoco coverage reports on the ${reportBuild} build."
+        dependsOn 'qPmd'
+
+        //configure director
+        classDirectories = fileTree(
+                dir: "${mDir}",
+                excludes: [ '**/R.class',
+                            '**/R$*.class',
+                            '**/*$ViewInjector*.*',
+                            '**/*$ViewBinder*.*',
+                            '**/BuildConfig.*',
+                            '**/Manifest*.*',
+                            '**/*Activity*.*',
+                            '**/*Fragment*.*',
+                            '**/*_Factory*.*',
+
+
+                        //user definied excludes
+                            '**/*Adapter**.*',
+                            '**/*Dialog*.class',
+                            '**/BaseViewHolder.class',
+                            '**/stripe/*.*',
+                            '**/rx/*.class',
+                            '**/view/*.class',
+                            '**/*View.class',
+                            '**/widget/*.class',
+                            '**/detector/*.class',
+                            '**/drawable/*.class',
+                            '**/util/*.class',
+                            '**/UserPreferences.class',
+                            '**/BindHelper.class',
+
+                            '**/*Module.*', // Modules for Dagger.
+                            '**/*Dagger*.*', // Dagger auto-generated code.
+                            '**/*MembersInjector*.*', // Dagger auto-generated code.
+                            '**/*_Provide*Factory*.*'] // Dagger auto-generated code.
+        )
+
+        additionalSourceDirs = files(coverageSourceDirs)
+        sourceDirectories = files(coverageSourceDirs)
+        executionData = files("${project.buildDir}/jacoco/${testTaskName}.exec")
+
+        reports {
+            xml.enabled = true
+            html.enabled = true
+        }
+        doLast {
+            coverageRaport("${coverageTaskName}")
+        }
+
+    }
+    qtools.dependsOn "${coverageTaskName}"
+}
+
+def showQualityReports(qualityTaskName) {
+    def findbugsreport, lintreport, checkstylereport, pmdreport
+    findbugsreport = "file://$project.buildDir/reports/findbugs/findbugs.html"
+    lintreport = "file://$project.rootDir/rx-java-extensions/rx-android-extensions/build/outputs/lint-results.html"
+    checkstylereport = "file://$project.buildDir/reports/checkstyle/checkstyle.html"
+    pmdreport = "file://$project.buildDir/reports/pmd/pmd.html"
+
+    switch (qualityTaskName) {
+        case 'qCheckStyle':
+            Desktop.getDesktop().browse(new URL(checkstylereport.toString()).toURI())
+            break
+        case 'qFindBugs':
+            Desktop.getDesktop().browse(new URL(findbugsreport.toString()).toURI())
+            break
+        case 'qPmd':
+            Desktop.getDesktop().browse(new URL(pmdreport.toString()).toURI())
+            break
+        case 'lint':
+            Desktop.getDesktop().browse(new URL(lintreport.toString()).toURI())
+            break
+        default:
+            println "Not handled exception on task ${qualityTaskName}"
+            break
+    }
+}
+
+task qtools {
+    doLast {
+        logger.quiet("\n\nQualityTools tasks completed\n\n")
+    }
+}
+
+gradle.taskGraph.afterTask { Task task, TaskState state ->
+    if (state.failure && task.name!='qCheckStyle') {
+        showQualityReports(task.name)
+    }
+    else if (task.name=='checkstyleHtml' && checkstyleFailStatus) {
+        showQualityReports('qCheckStyle')
+    }
+    else if(task.name=='qCheckStyle' && state.failure) {
+        checkstyleFailStatus = true
+    }
+}
