@@ -27,9 +27,12 @@ public abstract class BaseFragment extends RxFragment {
         injectComponent(activityComponent, new FragmentModule(this), savedInstanceState);
     }
 
+    public abstract void onFragmentViewCreated(View view, Bundle savedInstanceState);
+
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         ButterKnife.inject(this, view);
+        onFragmentViewCreated(view, savedInstanceState);
     }
 }

@@ -89,6 +89,16 @@
                 tools:text="Thriller, Comedy"/>
 
             <TextView
+                android:id="@+id/seasons"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:textStyle="bold"
+                android:text="Seasons"/>
+
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"

@@ -1,4 +1,9 @@
 <resources>
     <string name="app_name">DebugUtils</string>
     <string name="search_hint">Type title</string>
+    <string name="unknown">Unknown</string>
+    <string name="movie_type_all">all</string>
+    <string name="movie_type_movie">movie</string>
+    <string name="movie_type_series">series</string>
+    <string name="movie_type_episode">episode</string>
 </resources>

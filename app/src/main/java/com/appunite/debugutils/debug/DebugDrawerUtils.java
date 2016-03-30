@@ -3,6 +3,9 @@ package com.appunite.debugutils.debug;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.util.Log;
+
+import com.appunite.debugutils.R;
 
 public class DebugDrawerUtils {
 
@@ -14,7 +17,7 @@ public class DebugDrawerUtils {
             case Build.VERSION_CODES.BASE_1_1: // API level 2
                 return "Base update";
             case Build.VERSION_CODES.CUPCAKE: // API level 3
-                return  "Cupcake";
+                return "Cupcake";
             case Build.VERSION_CODES.CUR_DEVELOPMENT: // API level 4
                 return "Cur development";
             case Build.VERSION_CODES.DONUT: // API level 5
@@ -24,13 +27,13 @@ public class DebugDrawerUtils {
             case Build.VERSION_CODES.ECLAIR_0_1: // API level 7
                 return "Eclair 0 1";
             case Build.VERSION_CODES.ECLAIR_MR1: // API level 8
-                return  "Eclair MR1";
+                return "Eclair MR1";
             case Build.VERSION_CODES.FROYO: // API level 9
-                return  "Froyoooo";
+                return "Froyoooo";
             case Build.VERSION_CODES.GINGERBREAD: // API level 10
                 return "Gingerbread";
             case Build.VERSION_CODES.GINGERBREAD_MR1: // API level 11
-                return  "Gingerbread MR1";
+                return "Gingerbread MR1";
             case Build.VERSION_CODES.HONEYCOMB: // API level 12
                 return "Honeycomb";
             case Build.VERSION_CODES.HONEYCOMB_MR1: // API level 13
@@ -40,17 +43,17 @@ public class DebugDrawerUtils {
             case Build.VERSION_CODES.ICE_CREAM_SANDWICH: // API level 14
                 return "Ice Cream Sandwich";
             case Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1: // API level 15
-                return  "Ice Cream Sandwich MR1";
+                return "Ice Cream Sandwich MR1";
             case Build.VERSION_CODES.JELLY_BEAN: // API level 16
-                return  "Jelly Bean";
+                return "Jelly Bean";
             case Build.VERSION_CODES.JELLY_BEAN_MR1: // API level 17
-                return  "Jelly Bean MR1";
+                return "Jelly Bean MR1";
             case Build.VERSION_CODES.JELLY_BEAN_MR2: // API level 18
                 return "Jelly Bean MR2";
             case Build.VERSION_CODES.KITKAT: // API level 19
-                return  "Kitkat";
+                return "Kitkat";
             case Build.VERSION_CODES.KITKAT_WATCH: //API 20
-                return  "Kitkat Watch";
+                return "Kitkat Watch";
             case Build.VERSION_CODES.LOLLIPOP: //API 21
                 return "Lolipop";
             case Build.VERSION_CODES.LOLLIPOP_MR1: //API 22
@@ -64,33 +67,31 @@ public class DebugDrawerUtils {
 
     public static String getBuildVersion(Context context) {
         try {
-            String version = context.getPackageManager().getPackageInfo(context.getPackageName(),0).versionName;
-            version = version.replace(".debug","");
+            String version = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
+            version = version.replace(".debug", "");
             version = version.replace(".relase", "");
 
             return version;
         } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
-            return "Unknown";
+            Log.e("DebugDrawer", "Name of package not found", e);
+            return context.getString(R.string.unknown);
         }
     }
 
     public static String getBuildType(Context context) {
         try {
-            String version = context.getPackageManager().getPackageInfo(context.getPackageName(),0).versionName;
-            if(version.contains("debug")) {
+            String version = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
+            if (version.contains("debug")) {
                 return "debug";
-            }
-            else if (version.contains(".relase")) {
-               return "relase";
-            }
-            else {
-                return "Unknown";
+            } else if (version.contains(".relase")) {
+                return "relase";
+            } else {
+                return context.getString(R.string.unknown);
             }
 
         } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
-            return "Unknown";
+            Log.e("DebugDrawer", "Name of package not found", e);
+            return context.getString(R.string.unknown);
         }
     }
 

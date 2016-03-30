@@ -1,6 +1,6 @@
 package com.appunite.debugutils.models;
 
-public class Search {
+public class MovieShortInfo {
     private String Title;
     private String imdbID;
     private String Type;
@@ -8,7 +8,7 @@ public class Search {
     private String Poster;
 
 
-    public Search(String title, String imdbID, String type, String year, String poster) {
+    public MovieShortInfo(String title, String imdbID, String type, String year, String poster) {
         Title = title;
         this.imdbID = imdbID;
         Type = type;

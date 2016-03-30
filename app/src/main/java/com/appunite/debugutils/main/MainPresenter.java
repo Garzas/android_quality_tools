@@ -1,20 +1,23 @@
 package com.appunite.debugutils.main;
 
+import android.view.View;
+
 import com.appunite.debugutils.OmdbDao;
+import com.appunite.debugutils.models.MovieShortInfo;
 import com.appunite.debugutils.models.MoviesRequest;
-import com.appunite.debugutils.models.Search;
 import com.appunite.debugutils.models.SearchResponse;
 import com.appunite.detector.SimpleDetector;
 import com.appunite.rx.ObservableExtensions;
-import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.functions.BothParams;
 import com.appunite.rx.functions.Functions1;
+import com.appunite.rx.operators.MoreOperators;
 import com.appunite.rx.operators.OperatorSampleWithLastWithObservable;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -32,16 +35,31 @@ import rx.subjects.PublishSubject;
 
 public class MainPresenter {
 
-    private final Observable<Boolean> showSearchObservable;
-    private final Observable<BothParams<String,Boolean>> toolbarSearchObservable;
+    @Nonnull
+    private final Observable<BothParams<String, Boolean>> toolbarSearchObservable;
+    @Nonnull
+    private final PublishSubject<String> titleSubject = PublishSubject.create();
+    @Nonnull
+    private final Observable<MoviesRequest> moviesRequestObservable;
+    @Nonnull
+    private final Observable<Boolean> progressObservable;
+    @Nonnull
+    private final PublishSubject<String> openDetailsSubject = PublishSubject.create();
+    @Nonnull
+    private final Observable<List<BaseItem>> observableList;
+    @Nonnull
+    private final Observable<List<MovieItem>> movieList;
+    @Nonnull
+    private final BehaviorSubject<String> typeSubject = BehaviorSubject.create();
+    @Nonnull
+    private final BehaviorSubject<Integer> yearSubject = BehaviorSubject.create();
+    @Nonnull
+    private final PublishSubject<Integer> searchVisibilitySubject = PublishSubject.create();
+    @Nonnull
+    private final PublishSubject<Integer> optionsVisibilitySubject = PublishSubject.create();
+    @Nonnull
+    private final Observable<Boolean> showOptionsObservable;
 
-    public Observer<String> titleObserver() {
-        return titleSubject;
-    }
-
-    public Observable<BothParams<String, Boolean>> getToolbarSearchObservable() {
-        return toolbarSearchObservable;
-    }
 
     public abstract static class BaseItem implements SimpleDetector.Detectable<BaseItem> {
     }
@@ -114,72 +132,21 @@ public class MainPresenter {
 
     }
 
-
-    public class OptionsItem extends BaseItem {
-
-        private final List<String> typeList;
-
-        public OptionsItem(List<String> typeList) {
-            this.typeList = typeList;
-        }
-
-        public List<String> getTypeList() {
-            return typeList;
-        }
-
-        @Override
-        public boolean matches(@Nonnull BaseItem item) {
-            return false;
-        }
-
-        @Override
-        public boolean same(@Nonnull BaseItem item) {
-            return false;
-        }
-
-        public Observer<String> clickObserver() {
-            return Observers.create(new Action1<String>() {
-                @Override
-                public void call(String title) {
-                }
-            });
-        }
-
-    }
-
-    @Nonnull
-    private final PublishSubject<String> titleSubject = PublishSubject.create();
-    @Nonnull
-    private final Observable<MoviesRequest> moviesRequestObservable;
-    @Nonnull
-    private final Observable<Boolean> progressObservable;
-    @Nonnull
-    private final PublishSubject<String> openDetailsSubject = PublishSubject.create();
-    @Nonnull
-    private final PublishSubject<Boolean> showOptionsSubject = PublishSubject.create();
-    @Nonnull
-    private final PublishSubject<Object> showSearchSubject = PublishSubject.create();
-    @Nonnull
-    private final Observable<List<BaseItem>> observableList;
-    @Nonnull
-    private final Observable<List<MovieItem>> movieList;
-    @Nonnull
-    private final BehaviorSubject<String> searchSubject = BehaviorSubject.create();
-    @Nonnull
-    private final BehaviorSubject<String> typeSubject = BehaviorSubject.create();
-    @Nonnull
-    private final BehaviorSubject<Integer> yearSubject = BehaviorSubject.create();
-
     @Inject
     public MainPresenter(@Nonnull final OmdbDao omdbDao) {
 
-        showSearchObservable = showSearchSubject
-                .scan(false, new Func2<Boolean, Object, Boolean>() {
+        final Observable<Boolean> isSearchVisible = searchVisibilitySubject
+                .map(new Func1<Integer, Boolean>() {
                     @Override
-                    public Boolean call(Boolean aBoolean, Object o) {
-                        return !aBoolean;
+                    public Boolean call(Integer integer) {
+                        return integer == View.VISIBLE;
                     }
                 });
+
+        final Observable<Object> startSearch = isSearchVisible
+                .skip(1)
+                .filter(Functions1.isFalse())
+                .map(Functions1.toObject());
 
         moviesRequestObservable = Observable.combineLatest(
                 titleSubject,
@@ -188,62 +155,65 @@ public class MainPresenter {
                 new Func3<String, String, Integer, MoviesRequest>() {
                     @Override
                     public MoviesRequest call(String title, String type, Integer year) {
-                        return new MoviesRequest(title, type, year);
+                        return new MoviesRequest(title, type, null);
                     }
                 }
         )
-                .lift(OperatorSampleWithLastWithObservable.<MoviesRequest>create(showSearchObservable
-                        .filter(Functions1.isFalse())
-                        .map(Functions1.toObject())));
+                .lift(OperatorSampleWithLastWithObservable.<MoviesRequest>create(startSearch))
+                .compose(ObservableExtensions.<MoviesRequest>behaviorRefCount());
 
-        moviesRequestObservable.subscribe(omdbDao.moviesRequestObservable());
+        moviesRequestObservable.subscribe(omdbDao.moviesRequestObserver());
 
         movieList = omdbDao.omdbMoviesResponseObservable()
-                .compose(ResponseOrError.<SearchResponse>onlySuccess())
                 .map(new Func1<SearchResponse, List<MovieItem>>() {
                     @Override
                     public List<MovieItem> call(SearchResponse search) {
-                        return ImmutableList.copyOf(Iterables.transform(search.getMoviesList(), new Function<Search, MovieItem>() {
-                            @Nullable
-                            @Override
-                            public MovieItem apply(Search search) {
-                                return new MovieItem(
-                                        search.getImdbID(),
-                                        search.getTitle(),
-                                        search.getType(),
-                                        search.getYear(),
-                                        search.getPoster()
-                                );
-                            }
-                        }));
+                        return ImmutableList.copyOf(Iterables.transform(search.getMoviesList(),
+                                new Function<MovieShortInfo, MovieItem>() {
+                                    @Nullable
+                                    @Override
+                                    public MovieItem apply(MovieShortInfo search) {
+                                        return new MovieItem(
+                                                search.getImdbID(),
+                                                search.getTitle(),
+                                                search.getType(),
+                                                search.getYear(),
+                                                search.getPoster()
+                                        );
+                                    }
+                                }));
                     }
                 });
 
-            observableList = Observable.combineLatest(
-                    movieList.startWith(ImmutableList.<MovieItem>builder().build()),
-                    showOptionsSubject.startWith(false),
-                    new Func2<List<MovieItem>, Boolean, List<BaseItem>>() {
-                        @Override
-                        public List<BaseItem> call(List<MovieItem> movieItems, Boolean showOptions) {
-                            if (showOptions) {
-                                return ImmutableList.<BaseItem>builder()
-                                        .add(new OptionsItem(ImmutableList.of("any", "movie", "series", "episode")))
-                                        .addAll(movieItems)
-                                        .build();
-                            } else {
-                                return ImmutableList.<BaseItem>builder()
-                                        .addAll(movieItems)
-                                        .build();
-                            }
+        observableList = movieList
+                .startWith(ImmutableList.<MovieItem>builder().build())
+                .map(new Func1<List<MovieItem>, List<BaseItem>>() {
+                    @Override
+                    public List<BaseItem> call(List<MovieItem> movieItems) {
+                        return ImmutableList.<BaseItem>builder()
+                                .addAll(movieItems)
+                                .build();
+                    }
+                });
 
+
+        showOptionsObservable = optionsVisibilitySubject
+                .map(new Func1<Integer, Boolean>() {
+                    @Override
+                    public Boolean call(Integer visibility) {
+                        switch (visibility) {
+                            case View.VISIBLE:
+                                return false;
+                            default:
+                                return true;
                         }
                     }
-            );
-
+                })
+                .mergeWith(startSearch.map(Functions1.returnFalse()));
 
         toolbarSearchObservable = Observable.combineLatest(
                 titleSubject.startWith("Debug Utils"),
-                showSearchObservable,
+                isSearchVisible.map(Functions1.neg()),
                 new Func2<String, Boolean, BothParams<String, Boolean>>() {
                     @Override
                     public BothParams<String, Boolean> call(String s, Boolean aBoolean) {
@@ -252,47 +222,75 @@ public class MainPresenter {
                 }
         );
 
-
         progressObservable = Observable.merge(
                 moviesRequestObservable.map(Functions1.returnTrue()),
                 observableList.map(Functions1.returnFalse()));
 
     }
 
-
+    @Nonnull
     public Observable<List<BaseItem>> getObservableList() {
         return observableList;
     }
 
-    public Observable<String> titleObservable() {
-        return titleSubject;
-    }
-
+    @Nonnull
     public Observable<Object> hideKeyboardObservable() {
         return moviesRequestObservable.map(Functions1.toObject());
     }
 
+    @Nonnull
     public Observable<String> openDetailsObservable() {
         return openDetailsSubject;
     }
 
+    @Nonnull
     public Observable<Boolean> showProgressObservable() {
         return progressObservable;
     }
 
-    public Observer<String> resumeEditTextObserver() {
-        return searchSubject;
-    }
-
-    public Observer<Object> showSearchObserver() {
-        return showSearchSubject;
-    }
-
-    public Observable<Boolean> getShowSearchObservable() {
-        return showSearchObservable;
-    }
-
+    @Nonnull
     public Observable<List<MovieItem>> getMovieListObservable() {
         return movieList;
     }
+
+    @Nonnull
+    public Observer<String> titleObserver() {
+        return titleSubject;
+    }
+
+    @Nonnull
+    public Observable<BothParams<String, Boolean>> getToolbarSearchObservable() {
+        return toolbarSearchObservable;
+    }
+
+    @Nonnull
+    public Observer<Integer> searchViewVisibilityObserver() {
+        return searchVisibilitySubject;
+    }
+
+    @Nonnull
+    public Observable<Boolean> getShowOptionsObservable() {
+        return showOptionsObservable;
+    }
+
+    @Nonnull
+    public Observer<Integer> optionsViewVisiblityObserver() {
+        return optionsVisibilitySubject;
+    }
+
+    @Nonnull
+    public Observer<String> movieTypeObserver() {
+        return typeSubject;
+    }
+
+    @Nonnull Observable<String> movieTypeObservable() {
+        return typeSubject;
+    }
+
+    @Nonnull
+    public Observer<Integer> movieYearObserver() {
+        return yearSubject;
+    }
+
+
 }

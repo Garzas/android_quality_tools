@@ -10,9 +10,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.ImageView;
-import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.appunite.debugutils.R;
@@ -22,12 +20,11 @@ import com.appunite.detector.ChangesDetector;
 import com.appunite.detector.SimpleDetector;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
-import com.jakewharton.rxbinding.widget.RxAdapterView;
+import com.jakewharton.rxbinding.view.RxView;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
@@ -35,9 +32,7 @@ import javax.inject.Inject;
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 import rx.Subscription;
-import rx.android.view.ViewObservable;
 import rx.functions.Action1;
-import rx.functions.Func1;
 import rx.subscriptions.CompositeSubscription;
 
 abstract class BaseItemHolder extends RecyclerView.ViewHolder {
@@ -65,7 +60,7 @@ public class MainAdapter extends RecyclerView.Adapter<BaseItemHolder> implements
 
     @Inject
     public MainAdapter(Picasso picasso, @ForActivity @Nonnull Resources resources) {
-        this.changesDetector =  new ChangesDetector<>(new SimpleDetector<MainPresenter.BaseItem>());
+        this.changesDetector = new ChangesDetector<>(new SimpleDetector<MainPresenter.BaseItem>());
         this.mPicasso = picasso;
         this.resources = resources;
     }
@@ -115,17 +110,19 @@ public class MainAdapter extends RecyclerView.Adapter<BaseItemHolder> implements
             name.setSelected(true);
             mPicasso
                     .load(Strings.emptyToNull(movieItem.getPoster()))
-                    .error(R.drawable.template_image)
+                    .error(R.drawable.no_poster)
                     .placeholder(R.drawable.internaly)
                     .fit()
                     .centerCrop()
-                    .transform(PaletteTransformation.instance())
+                    .transform(PaletteTransformation.getInstance())
                     .into(imageView, new Callback.EmptyCallback() {
                         @Override
                         public void onSuccess() {
                             Bitmap bitmap = ((BitmapDrawable) imageView.getDrawable()).getBitmap();
                             Palette palette = PaletteTransformation.getPalette(bitmap);
 
+
+                            //TODO check if while works
                             if (palette.getMutedSwatch() != null) {
                                 bodyColor = palette.getMutedSwatch().getBodyTextColor();
                                 secondBodyColor = palette.getMutedSwatch().getRgb();
@@ -147,14 +144,16 @@ public class MainAdapter extends RecyclerView.Adapter<BaseItemHolder> implements
                     });
 
             mSubscription = new CompositeSubscription(
-                    ViewObservable.clicks(itemView)
+                    RxView.clicks(itemView)
                             .subscribe(movieItem.clickObserver())
             );
 
         }
 
-        public boolean isColorLight(int color){
-            double darkness = 1-(0.299*Color.red(color) + 0.587* Color.green(color) + 0.114*Color.blue(color))/255;
+        public boolean isColorLight(int color) {
+            double darkness = 1 - (0.299 * Color.red(color)
+                    + 0.587 * Color.green(color)
+                    + 0.114 * Color.blue(color)) / 255;
             return darkness < 0.5;
         }
 
@@ -168,60 +167,14 @@ public class MainAdapter extends RecyclerView.Adapter<BaseItemHolder> implements
 
         public static MovieHolder create(ViewGroup parent, Picasso mPicasso, Resources resources) {
             final LayoutInflater inflater = LayoutInflater.from(parent.getContext());
-            return new MovieHolder(inflater.inflate(R.layout.movie_item, parent, false), mPicasso, resources);
+            return new MovieHolder(inflater.inflate(
+                    R.layout.movie_item, parent, false),
+                    mPicasso,
+                    resources);
         }
 
     }
 
-
-    static class OptionsHolder extends BaseItemHolder {
-
-        private final View view;
-        private Subscription mSubscription;
-
-        @InjectView(R.id.debug_spinner_name)
-        TextView spinnerName;
-
-        @InjectView(R.id.debug_spinner)
-        Spinner spinner;
-
-
-        public OptionsHolder(View itemView) {
-            super(itemView);
-            this.view = itemView;
-            ButterKnife.inject(this, itemView);
-        }
-
-        @Override
-        public void bind(@Nonnull MainPresenter.BaseItem item) {
-            MainPresenter.OptionsItem spinnerItem = (MainPresenter.OptionsItem) item;
-            final ArrayAdapter<String> adapter = new ArrayAdapter<>(itemView.getContext(), android.R.layout.simple_spinner_item, spinnerItem.getTypeList());
-
-            spinner.setAdapter(adapter);
-            mSubscription = new CompositeSubscription(RxAdapterView.itemSelections(spinner)
-                    .map(new Func1<Integer, String>() {
-                        @Override
-                        public String call(Integer integer) {
-                            return adapter.getItem(integer);
-                        }
-                    })
-                    .subscribe(spinnerItem.clickObserver()));
-
-        }
-
-        @Override
-        public void recycle() {
-            if (mSubscription != null) {
-                mSubscription.unsubscribe();
-            }
-        }
-
-        public static OptionsHolder create(ViewGroup parent) {
-            final LayoutInflater inflater = LayoutInflater.from(parent.getContext());
-            return new OptionsHolder(inflater.inflate(R.layout.options_item, parent, false));
-        }
-
-    }
 
     @Override
     public BaseItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {

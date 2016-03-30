@@ -22,7 +22,7 @@ public class DebugDrawerPreferences {
         editor.apply();
     }
 
-    public boolean getLeakCanaryState() {
+    public boolean isLeakCanaryOn() {
         return sharedPreferences.getBoolean(LEAK_CANARY_STATE, false);
     }
 }

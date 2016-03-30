@@ -46,7 +46,10 @@ public class OmdbDao {
                 .flatMap(new Func1<MoviesRequest, Observable<ResponseOrError<SearchResponse>>>() {
                     @Override
                     public Observable<ResponseOrError<SearchResponse>> call(MoviesRequest moviesRequest) {
-                        return service.movieList(moviesRequest.getTitle(),moviesRequest.getType(),moviesRequest.getYear())
+                        return service.movieList(
+                                moviesRequest.getTitle(),
+                                moviesRequest.getType(),
+                                moviesRequest.getYear())
                                 .compose(ResponseOrError.<SearchResponse>toResponseOrErrorObservable())
                                 .compose(MoreOperators.<SearchResponse>repeatOnError(networkScheduler))
                                 .compose(ObservableExtensions.<ResponseOrError<SearchResponse>>behaviorRefCount())
@@ -77,12 +80,19 @@ public class OmdbDao {
     }
 
     @Nonnull
-    public Observable<ResponseOrError<SearchResponse>> omdbMoviesResponseObservable() {
-        return movieListResponseSubject;
+    public Observable<SearchResponse> omdbMoviesResponseObservable() {
+        return movieListResponseSubject
+                .compose(ResponseOrError.<SearchResponse>onlySuccess());
     }
 
     @Nonnull
-    public Observer<MoviesRequest> moviesRequestObservable() {
+    public Observable<Throwable> omdbMoviesErrorObservable() {
+        return movieListResponseSubject
+                .compose(ResponseOrError.<SearchResponse>onlyError());
+    }
+
+    @Nonnull
+    public Observer<MoviesRequest> moviesRequestObserver() {
         return moviesRequestSubject;
     }
 

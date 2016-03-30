@@ -7,7 +7,6 @@ import com.appunite.debugutils.dagger.BaseActivityComponent;
 
 import dagger.Component;
 
-
     @ActivityScope
     @Component(
             dependencies = AppComponent.class,
@@ -15,6 +14,6 @@ import dagger.Component;
     )
     public interface MainActivityComponent extends BaseActivityComponent {
 
-        void inject(MainActvity activity);
+        void inject(MainActivity activity);
 
     }

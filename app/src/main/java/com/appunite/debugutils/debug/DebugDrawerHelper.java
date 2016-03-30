@@ -30,7 +30,7 @@ public class DebugDrawerHelper {
 
     private Activity activity;
     private SerialSubscription subscription = new SerialSubscription();
-    private static DelayInterceptor delayInterceptor;
+    private DelayInterceptor delayInterceptor;
     final DebugPresenter debugPresenter;
     DebugDrawerPreferences debugPreferences;
 
@@ -39,11 +39,10 @@ public class DebugDrawerHelper {
         delayInterceptor = new DelayInterceptor();
         debugPreferences = new DebugDrawerPreferences(activity.getApplicationContext());
         debugPresenter = new DebugPresenter(activity);
-        if(debugPreferences.getLeakCanaryState()){
+        if (debugPreferences.isLeakCanaryOn()) {
             LeakCanary.install(activity.getApplication());
         }
 
-        //TODO turn off leakcanary
 
     }
 
@@ -59,7 +58,7 @@ public class DebugDrawerHelper {
         final ViewGroup mainFrame = (ViewGroup) root.findViewById(R.id.main_frame);
         mainFrame.removeAllViews();
         mainFrame.addView(child);
-        final ScalpelFrameLayout scalpelFrame= (ScalpelFrameLayout) mainFrame;
+        final ScalpelFrameLayout scalpelFrame = (ScalpelFrameLayout) mainFrame;
         final DebugAdapter debugAdapter = new DebugAdapter(debugPreferences);
 
         final LinearLayoutManager layoutManager = new LinearLayoutManager(activity);
@@ -128,7 +127,7 @@ public class DebugDrawerHelper {
                             }
                         }),
 
-                debugPresenter.showLogObservable()
+                debugPresenter.getShowLogObservable()
                         .subscribe(new Action1<Object>() {
                             @Override
                             public void call(Object o) {
@@ -159,14 +158,14 @@ public class DebugDrawerHelper {
     }
 
     public void onResume() {
-            TinyDancer.create().show(activity.getApplicationContext());
-            TinyDancer.hide(activity.getApplicationContext());
+        TinyDancer.create().show(activity.getApplicationContext());
+        TinyDancer.hide(activity.getApplicationContext());
     }
 
     @Nonnull
-    public static Interceptor getDelayInterceptor(Interceptor interceptor) {
+    public Interceptor getDelayInterceptor(Interceptor interceptor) {
 //        if (BuildConfig.DEBUG || interceptor == null) {
-            return delayInterceptor;
+        return getDelayInterceptor();
 //        }
 //        else {
 //            return interceptor;
@@ -174,4 +173,7 @@ public class DebugDrawerHelper {
 
     }
 
+    public DelayInterceptor getDelayInterceptor() {
+        return delayInterceptor;
+    }
 }

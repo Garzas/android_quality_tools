@@ -1,6 +1,66 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:background="@color/colorPrimary"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="6dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="Select type to search"
+        android:textStyle="bold" />
+
+
+        <RadioGroup
+            android:id="@+id/type_radio_group"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_gravity="center"
+            android:orientation="vertical">
+
+
+            <RadioButton
+                android:id="@+id/type_all"
+                android:layout_width="96dp"
+                android:layout_height="48dp"
+                android:layout_margin="8dp"
+                android:textColor="@drawable/selected_text"
+                android:background="@drawable/type_radio_button"
+                android:button="@android:color/transparent"
+                android:transitionName="@string/movie_type_all"
+                android:gravity="center"
+                android:text="all" />
+
+            <RadioButton
+                android:id="@+id/type_movie"
+                android:layout_width="96dp"
+                android:layout_height="48dp"
+                android:layout_margin="8dp"
+                android:textColor="@drawable/selected_text"
+                android:background="@drawable/type_radio_button"
+                android:transitionName="@string/movie_type_movie"
+                android:button="@android:color/transparent"
+                android:gravity="center"
+                android:text="movie" />
+
+            <RadioButton
+                android:id="@+id/type_series"
+                android:layout_width="96dp"
+                android:layout_height="48dp"
+                android:layout_margin="8dp"
+                android:textColor="@drawable/selected_text"
+                android:background="@drawable/type_radio_button"
+                android:button="@android:color/transparent"
+                android:transitionName="@string/movie_type_series"
+                android:gravity="center"
+                android:text="series" />
+
+        </RadioGroup>
 
 </LinearLayout>

@@ -13,6 +13,7 @@ import com.appunite.debugutils.R;
 import com.appunite.detector.ChangesDetector;
 import com.appunite.detector.SimpleDetector;
 import com.google.common.collect.ImmutableList;
+import com.jakewharton.rxbinding.view.RxView;
 import com.jakewharton.rxbinding.widget.RxAdapterView;
 import com.jakewharton.rxbinding.widget.RxCompoundButton;
 
@@ -24,7 +25,6 @@ import butterknife.ButterKnife;
 import butterknife.InjectView;
 import rx.Observable;
 import rx.Subscription;
-import rx.android.view.ViewObservable;
 import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.subscriptions.CompositeSubscription;
@@ -131,7 +131,10 @@ public class DebugAdapter extends RecyclerView.Adapter<BaseDebugHolder> implemen
         @Override
         public void bind(@Nonnull DebugPresenter.BaseDebugItem item) {
             DebugPresenter.SpinnerItem spinnerItem = (DebugPresenter.SpinnerItem) item;
-            final ArrayAdapter<Integer> adapter = new ArrayAdapter<>(itemView.getContext(), R.layout.debug_spinner_layout, spinnerItem.getValues());
+            final ArrayAdapter<Integer> adapter = new ArrayAdapter<>(
+                    itemView.getContext(),
+                    R.layout.debug_spinner_layout,
+                    spinnerItem.getValues());
 
             spinnerName.setText(spinnerItem.getName());
             spinner.setAdapter(adapter);
@@ -186,7 +189,7 @@ public class DebugAdapter extends RecyclerView.Adapter<BaseDebugHolder> implemen
             title.setText(switchItem.getTitle());
 
             mSubscription = new CompositeSubscription(
-                    Observable.just(debugPreferences.getLeakCanaryState())
+                    Observable.just(debugPreferences.isLeakCanaryOn())
                             .filter(new Func1<Boolean, Boolean>() {
                                 @Override
                                 public Boolean call(Boolean o) {
@@ -237,7 +240,7 @@ public class DebugAdapter extends RecyclerView.Adapter<BaseDebugHolder> implemen
             actionName.setText(actionItem.getName());
 
             mSubscription = new CompositeSubscription(
-                    ViewObservable.clicks(view)
+                    RxView.clicks(view)
                             .subscribe(actionItem.actionOption())
             );
 

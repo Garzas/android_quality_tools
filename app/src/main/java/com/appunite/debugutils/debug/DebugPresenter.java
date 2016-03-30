@@ -6,6 +6,7 @@ import android.os.Build;
 import android.support.annotation.NonNull;
 
 import com.appunite.detector.SimpleDetector;
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 
 import java.util.List;
@@ -25,32 +26,41 @@ import rx.subjects.PublishSubject;
 
 public class DebugPresenter {
 
+    @Nonnull
     private final PublishSubject<Integer> delaySubject = PublishSubject.create();
+    @Nonnull
     private final PublishSubject<SwitchOption> optionSubject = PublishSubject.create();
+    @Nonnull
     private final Observable<Boolean> scalpelObservable;
+    @Nonnull
     private final Observable<List<BaseDebugItem>> scalpelUtilsList;
+    @Nonnull
     private final Observable<Boolean> drawViewsObservable;
+    @Nonnull
     private final Observable<Boolean> showIdObservable;
+    @Nonnull
     private final Observable<List<BaseDebugItem>> utilList;
+    @Nonnull
     private final Observable<Boolean> fpsLabelObservable;
+    @Nonnull
     private final PublishSubject<Integer> actionSubject = PublishSubject.create();
+    @Nonnull
     private final Observable<String> showLogObservable;
+    @Nonnull
     private final Observable<Boolean> leakCanaryObservable;
-
-
     @Nonnull
-    public Observable<Boolean> setScalpelObservable() {
-        return scalpelObservable;
-    }
-
+    private final BehaviorSubject<List<BaseDebugItem>> simpleListSubject = BehaviorSubject.create();
     @Nonnull
-    public Observable<Boolean> setDrawViewsObservable() {
-        return drawViewsObservable;
-    }
+    private final Observable<List<InformationItem>> deviceInfoList;
+    @Nonnull
+    private final Observable<List<InformationItem>> buildInfoList;
+    @Nonnull
+    private final PublishSubject<Float> densitySubject = PublishSubject.create();
+    @Nonnull
+    private final PublishSubject<String> resolutionSubject = PublishSubject.create();
+    @Nonnull
+    private final Context context;
 
-    public Observable<Boolean> setShowIdsObservable() {
-        return showIdObservable;
-    }
 
     public abstract static class BaseDebugItem implements SimpleDetector.Detectable<BaseDebugItem> {
     }
@@ -113,17 +123,25 @@ public class DebugPresenter {
 
         @Override
         public boolean equals(Object o) {
-            return false;
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof InformationItem)) {
+                return false;
+            }
+            InformationItem that = (InformationItem) o;
+            return Objects.equal(name, that.name)
+                    && Objects.equal(value, that.value);
         }
 
         @Override
         public int hashCode() {
-            return name.hashCode();
+            return Objects.hashCode(name, value);
         }
 
         @Override
         public boolean matches(@Nonnull BaseDebugItem item) {
-            return false;
+            return item instanceof InformationItem && name.equals(((InformationItem) item).name);
         }
 
         @Override
@@ -164,17 +182,25 @@ public class DebugPresenter {
 
         @Override
         public boolean equals(Object o) {
-            return false;
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof SpinnerItem)) {
+                return false;
+            }
+            SpinnerItem that = (SpinnerItem) o;
+            return Objects.equal(name, that.name)
+                    && Objects.equal(values, that.values);
         }
 
         @Override
         public int hashCode() {
-            return name.hashCode();
+            return Objects.hashCode(name, values);
         }
 
         @Override
         public boolean matches(@Nonnull BaseDebugItem item) {
-            return false;
+            return item instanceof SpinnerItem && name.equals(((SpinnerItem) item).name);
         }
 
         @Override
@@ -214,17 +240,25 @@ public class DebugPresenter {
 
         @Override
         public boolean equals(Object o) {
-            return false;
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof SwitchItem)) {
+                return false;
+            }
+            SwitchItem that = (SwitchItem) o;
+            return Objects.equal(title, that.title)
+                    && Objects.equal(option, that.option);
         }
 
         @Override
         public int hashCode() {
-            return title.hashCode();
+            return Objects.hashCode(title, option);
         }
 
         @Override
         public boolean matches(@Nonnull BaseDebugItem item) {
-            return false;
+            return item instanceof SwitchItem && title.equals(((SwitchItem) item).title);
         }
 
         @Override
@@ -264,17 +298,25 @@ public class DebugPresenter {
 
         @Override
         public boolean equals(Object o) {
-            return false;
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof ActionItem)) {
+                return false;
+            }
+            ActionItem that = (ActionItem) o;
+            return Objects.equal(name, that.name)
+                    && Objects.equal(action, that.action);
         }
 
         @Override
         public int hashCode() {
-            return name.hashCode();
+            return Objects.hashCode(name, action);
         }
 
         @Override
         public boolean matches(@Nonnull BaseDebugItem item) {
-            return false;
+            return item instanceof ActionItem && name.equals(((ActionItem) item).name);
         }
 
         @Override
@@ -292,13 +334,6 @@ public class DebugPresenter {
         }
     }
 
-    private final BehaviorSubject<List<BaseDebugItem>> simpleListSubject = BehaviorSubject.create();
-    private final Observable<List<InformationItem>> deviceInfoList;
-    private final Observable<List<InformationItem>> buildInfoList;
-    private final PublishSubject<Float> densitySubject = PublishSubject.create();
-    private final PublishSubject<String> resolutionSubject = PublishSubject.create();
-    private final Context context;
-
     public DebugPresenter(final Context context) {
         this.context = context;
 
@@ -310,7 +345,10 @@ public class DebugPresenter {
                     public List<InformationItem> call(String resolution, Float density) {
                         return ImmutableList.of(
                                 new InformationItem("Model", Build.MANUFACTURER + " " + Build.MODEL),
-                                new InformationItem("SDK", DebugDrawerUtils.checkSDKNamme(Build.VERSION.SDK_INT) + "(" + Build.VERSION.SDK_INT + " API)"),
+                                new InformationItem("SDK", DebugDrawerUtils.checkSDKNamme(
+                                        Build.VERSION.SDK_INT)
+                                        + "(" + Build.VERSION.SDK_INT
+                                        + " API)"),
                                 new InformationItem("Relase", Build.VERSION.RELEASE),
                                 new InformationItem("Resolution", resolution),
                                 new InformationItem("Density", Math.round(density) + "dpi"));
@@ -359,16 +397,21 @@ public class DebugPresenter {
                 buildInfoList,
                 scalpelUtilsList,
                 utilList,
-                new Func4<List<InformationItem>, List<InformationItem>, List<BaseDebugItem>, List<BaseDebugItem>, List<BaseDebugItem>>() {
+                new Func4<List<InformationItem>, List<InformationItem>, List<BaseDebugItem>,
+                        List<BaseDebugItem>, List<BaseDebugItem>>() {
                     @Override
-                    public List<BaseDebugItem> call(List<InformationItem> deviceInfo, List<InformationItem> buildInfo, List<BaseDebugItem> scalpelUtils, List<BaseDebugItem> utils) {
+                    public List<BaseDebugItem> call(
+                            List<InformationItem> deviceInfo,
+                            List<InformationItem> buildInfo,
+                            List<BaseDebugItem> scalpelUtils,
+                            List<BaseDebugItem> utils) {
                         return ImmutableList.<BaseDebugItem>builder()
                                 .add(new CategoryItem("Device Information"))
                                 .addAll(deviceInfo)
                                 .add(new CategoryItem("About app"))
                                 .addAll(buildInfo)
                                 .add(new CategoryItem("OKHTTP options"))
-                                .add(new SpinnerItem("Delay[ms]", ImmutableList.of(100, 200, 300, 500, 1000, 2000, 10000)))
+                                .add(new SpinnerItem("Delay[ms]", ImmutableList.of(100, 500, 1000, 2000, 10000)))
                                 .add(new CategoryItem("Scalpel Utils"))
                                 .addAll(scalpelUtils)
                                 .add(new CategoryItem("Tools"))
@@ -479,7 +522,7 @@ public class DebugPresenter {
     }
 
     @Nonnull
-    public Observable<String> showLogObservable() {
+    public Observable<String> getShowLogObservable() {
         return showLogObservable;
     }
 
@@ -487,4 +530,20 @@ public class DebugPresenter {
     public Observable<Boolean> getLeakCanaryObservable() {
         return leakCanaryObservable;
     }
+
+    @Nonnull
+    public Observable<Boolean> setScalpelObservable() {
+        return scalpelObservable;
+    }
+
+    @Nonnull
+    public Observable<Boolean> setDrawViewsObservable() {
+        return drawViewsObservable;
+    }
+
+    @Nonnull
+    public Observable<Boolean> setShowIdsObservable() {
+        return showIdObservable;
+    }
+
 }

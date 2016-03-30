@@ -1,33 +1,97 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/black"
     android:orientation="vertical">
 
-    <android.support.v7.widget.Toolbar
-        android:id="@+id/main_toolbar"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:background="@color/colorPrimary"
-        android:layout_height="?attr/actionBarSize">
-
-        <EditText
-            android:id="@+id/search_view"
-            android:layout_width="200dp"
-            android:layout_height="match_parent"
-            android:visibility="gone"
-            android:textColor="@android:color/white"
-            android:textColorHint="@android:color/secondary_text_light"
-            android:hint="@string/search_hint" />
+        android:layout_height="wrap_content">
 
 
-    </android.support.v7.widget.Toolbar>
+        <android.support.v7.widget.Toolbar
+            android:id="@+id/main_toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@color/colorPrimary">
+
+            <EditText
+                android:id="@+id/search_view"
+                android:layout_width="200dp"
+                android:layout_height="match_parent"
+                android:hint="@string/search_hint"
+                android:textColor="@android:color/white"
+                android:textColorHint="@android:color/secondary_text_light"
+                android:visibility="gone" />
+
+        </android.support.v7.widget.Toolbar>
+
+
+        <LinearLayout
+            android:id="@+id/search_options_view"
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:layout_marginTop="?attr/actionBarSize"
+            android:background="@color/colorPrimary"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:padding="6dp"
+            android:visibility="visible">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Search for"
+                android:textColor="@android:color/white" />
+
+            <TextView
+                android:id="@+id/select_type_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="6dp"
+                android:paddingLeft="12dp"
+                android:paddingRight="12dp"
+                android:background="@drawable/radio_button_off"
+                android:textColor="@android:color/white"
+                tools:text="all" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="24dp"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/white"
+                    android:text="Year of release" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/white"
+                    android:text="any"/>
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </FrameLayout>
 
     <FrameLayout
-        android:paddingTop="8dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@android:color/black">
+        android:background="@android:color/black"
+        android:paddingTop="8dp">
 
         <android.support.v7.widget.RecyclerView
             android:id="@+id/main_recyclerview"
@@ -41,27 +105,26 @@
             android:id="@+id/intro_layout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:visibility="visible">
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="Simple movies search from IMDB database provided by OMDB API"
                 android:textColor="@android:color/holo_orange_light"
                 android:textSize="18dp"
-                android:textStyle="bold"
-                android:gravity="center"
-                android:text="Simple movies search from IMDB database provided by OMDB API"/>
+                android:textStyle="bold" />
 
             <ImageView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:src="@drawable/imdb_logo"/>
+                android:src="@drawable/imdb_logo" />
 
 
         </LinearLayout>
-
-
 
 
         <FrameLayout
