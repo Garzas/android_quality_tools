@@ -5,6 +5,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.util.Pair;
 import android.support.v7.widget.RecyclerView;
@@ -14,6 +15,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -25,6 +27,7 @@ import com.appunite.debugutils.dagger.BaseActivityComponent;
 import com.appunite.debugutils.details.InfoActivity;
 import com.appunite.debugutils.dialog.TypeDialog;
 import com.appunite.debugutils.util.KeyboardHelper;
+import com.appunite.debugutils.view.ColoredSnackBar;
 import com.appunite.rx.functions.BothParams;
 import com.appunite.rx.functions.Functions1;
 import com.jakewharton.rxbinding.view.RxView;
@@ -68,6 +71,8 @@ public class MainActivity extends BaseActivity {
     View searchOptionsView;
     @InjectView(R.id.select_type_button)
     TextView selectTypeView;
+    @InjectView(R.id.main_content)
+    View content;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,9 +89,6 @@ public class MainActivity extends BaseActivity {
 
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setAdapter(adapter);
-
-
-        //TODO animation transitions, testy!!!
 
         presenter.getObservableList()
                 .compose(this.<List<MainPresenter.BaseItem>>bindToLifecycle())
@@ -245,7 +247,21 @@ public class MainActivity extends BaseActivity {
         switch (item.getItemId()) {
             case R.id.search:
                 searchText.setVisibility(searchText.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
-                presenter.searchViewVisibilityObserver().onNext(searchText.getVisibility());
+                if (searchText.getVisibility() == View.VISIBLE) {
+                    searchText.requestFocus();
+                    KeyboardHelper.showSoftKeyboard(this);
+                }
+                if (searchText.length() < 2 && searchText.getVisibility() != View.VISIBLE) {
+                    ColoredSnackBar
+                            .error(content, "Enter at least 2 characters", Snackbar.LENGTH_SHORT)
+                            .show();
+                    searchText.setVisibility(View.VISIBLE);
+                    searchText.requestFocus();
+                } else {
+                    presenter.searchViewVisibilityObserver().onNext(searchText.getVisibility());
+                }
+
+
                 return true;
             case R.id.search_options:
                 presenter.optionsViewVisiblityObserver().onNext(searchOptionsView.getVisibility());
@@ -258,7 +274,7 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == CHANGE_TYPE) {
-            if(resultCode == Activity.RESULT_OK){
+            if (resultCode == Activity.RESULT_OK) {
                 String typeValue = data.getStringExtra(TYPE_VALUE);
                 presenter.movieTypeObserver().onNext(typeValue);
             }
