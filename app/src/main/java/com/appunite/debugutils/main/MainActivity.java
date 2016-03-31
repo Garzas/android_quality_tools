@@ -246,6 +246,8 @@ public class MainActivity extends BaseActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.search:
+                //// FIXME: 31/03/16 remove when no needed
+                searchText.setText("game");
                 searchText.setVisibility(searchText.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
                 if (searchText.getVisibility() == View.VISIBLE) {
                     searchText.requestFocus();

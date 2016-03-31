@@ -9,6 +9,7 @@ import com.appunite.debugutils.BaseFragment;
 import com.appunite.debugutils.R;
 import com.appunite.debugutils.dagger.BaseActivityComponent;
 import com.appunite.debugutils.dagger.FragmentModule;
+import com.appunite.debugutils.models.Season;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -16,8 +17,9 @@ import javax.annotation.Nullable;
 public class SeasonFragment extends BaseFragment {
 
 
-    private String id;
-    public static SeasonFragment newInstance(String id) {
+    private Season season;
+
+    public static SeasonFragment newInstance(Season season) {
         return new SeasonFragment();
     }
 

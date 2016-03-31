@@ -3,26 +3,33 @@ package com.appunite.debugutils.season;
 
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.app.FragmentStatePagerAdapter;
+
+import com.appunite.debugutils.OmdbService;
+import com.appunite.debugutils.models.Season;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 
-public class SeasonAdapter extends FragmentPagerAdapter {
+import rx.functions.Action1;
+
+public class SeasonAdapter extends FragmentStatePagerAdapter implements Action1<Season> {
 
     @Nonnull
-    private List<String> tabTitles;
+    private final FragmentManager fragmentManager;
+    private final String seriesId;
+    private OmdbService service;
+    @Nonnull
+    private List<Season> tabTitles = new ArrayList<>();
 
-    @Inject
-    public SeasonAdapter(@Nonnull FragmentManager fragmentManager) {
+
+    public SeasonAdapter(@Nonnull FragmentManager fragmentManager, final String seriesId, final OmdbService service) {
         super(fragmentManager);
-
-        tabTitles = new ArrayList<>();
-        tabTitles.add("first");
-        tabTitles.add("second");
+        this.fragmentManager = fragmentManager;
+        this.seriesId = seriesId;
+        this.service = service;
 
     }
 
@@ -38,7 +45,12 @@ public class SeasonAdapter extends FragmentPagerAdapter {
 
     @Override
     public CharSequence getPageTitle(int position) {
-        return tabTitles.get(position);
+        return String.format("Season %d", position + 1);
     }
 
+    @Override
+    public void call(Season seasons) {
+        tabTitles.add(seasons);
+        notifyDataSetChanged();
+    }
 }

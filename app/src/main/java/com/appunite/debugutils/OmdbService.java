@@ -32,7 +32,7 @@ public interface OmdbService {
     @GET("/?r=json")
     Observable<Season> getSeason(
             @Query("i") String id,
-            @Query("Season") String season
+            @Query("Season") int season
     );
 
 

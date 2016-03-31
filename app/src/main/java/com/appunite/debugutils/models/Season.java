@@ -21,8 +21,8 @@ public class Season {
         return Title;
     }
 
-    public String getSeason() {
-        return Season;
+    public int getSeason() {
+        return Integer.parseInt(Season);
     }
 
     public List<Episode> getEpisodes() {
@@ -31,5 +31,19 @@ public class Season {
 
     public String getResponse() {
         return Response;
+    }
+
+    public boolean hasResponse() {
+        return Response.equalsIgnoreCase("true");
+    }
+
+    @Override
+    public String toString() {
+        return "Season{" +
+                "Title='" + Title + '\'' +
+                ", Season='" + Season + '\'' +
+                ", Episodes=" + Episodes +
+                ", Response='" + Response + '\'' +
+                '}';
     }
 }
