@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.TabLayout;
 import android.support.v4.view.ViewPager;
+import android.view.View;
 
 import com.appunite.debugutils.App;
 import com.appunite.debugutils.BaseActivity;
@@ -13,10 +14,9 @@ import com.appunite.debugutils.R;
 import com.appunite.debugutils.dagger.ActivityModule;
 import com.appunite.debugutils.dagger.BaseActivityComponent;
 import com.appunite.debugutils.models.Season;
-import com.appunite.rx.android.util.LogTransformer;
-import com.google.common.collect.Maps;
+import com.jakewharton.rxbinding.view.RxView;
 
-import java.util.Map;
+import java.util.List;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -35,11 +35,10 @@ public class SeasonActivity extends BaseActivity {
     ViewPager viewPager;
     @InjectView(R.id.season_tab_layout)
     TabLayout tabLayout;
+    @InjectView(R.id.season_progress)
+    View progressView;
 
     SeasonAdapter adapter;
-
-    @Inject
-    OmdbService service;
 
     @Inject
     SeasonPresenter presenter;
@@ -60,7 +59,7 @@ public class SeasonActivity extends BaseActivity {
 
         final String seriesId = getIntent().getStringExtra(SERIES_ID);
 
-        adapter = new SeasonAdapter(getSupportFragmentManager(), seriesId, service);
+        adapter = new SeasonAdapter(getSupportFragmentManager());
         viewPager.setOffscreenPageLimit(3);
         viewPager.setAdapter(adapter);
         tabLayout.setupWithViewPager(viewPager);
@@ -70,15 +69,19 @@ public class SeasonActivity extends BaseActivity {
                 .subscribe(presenter.seriesIdObserver());
 
         presenter.getUpdateSeasonAdapter()
-                .compose(this.<Season>bindToLifecycle())
-                .subscribe(new Action1<Season>() {
+                .compose(this.<List<Season>>bindToLifecycle())
+                .subscribe(new Action1<List<Season>>() {
                     @Override
-                    public void call(Season season) {
-                        adapter.call(season);
+                    public void call(List<Season> seasonList) {
+                        adapter.call(seasonList);
                         viewPager.setAdapter(adapter);
                         tabLayout.setupWithViewPager(viewPager);
                     }
                 });
+
+        presenter.getProgressObservable()
+                .compose(this.<Boolean>bindToLifecycle())
+                .subscribe(RxView.visibility(progressView));
     }
 
     @Nonnull
@@ -87,6 +90,7 @@ public class SeasonActivity extends BaseActivity {
         return DaggerSeasonActivityComponent
                 .builder()
                 .activityModule(new ActivityModule(this))
+                .seasonActivityModule(new SeasonActivityModule())
                 .appComponent(App.getAppComponent(getApplication()))
                 .build();
     }

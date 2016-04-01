@@ -11,9 +11,11 @@ import dagger.Component;
 @Component(
 
         dependencies = AppComponent.class,
-        modules = ActivityModule.class
+        modules = {ActivityModule.class, SeasonActivityModule.class}
 )
 public interface SeasonActivityComponent extends BaseActivityComponent {
 
     void inject(SeasonActivity activity);
+
+    SeasonPresenter seasonPresenter();
 }

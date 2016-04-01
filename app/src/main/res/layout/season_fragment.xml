@@ -4,10 +4,13 @@
     android:layout_height="match_parent">
 
 
-    <View
-        android:layout_width="64dp"
-        android:layout_height="64dp"
-        android:background="@color/colorAccent"/>
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/season_recyclerview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="right"
+        android:choiceMode="singleChoice"
+        android:divider="@null" />
 
 
 

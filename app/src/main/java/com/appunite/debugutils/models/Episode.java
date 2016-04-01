@@ -24,12 +24,12 @@ public class Episode {
         return Released;
     }
 
-    public String getEpisode() {
-        return Episode;
+    public int getEpisode() {
+        return Integer.parseInt(Episode);
     }
 
-    public String getImdbRating() {
-        return imdbRating;
+    public Double getImdbRating() {
+        return Double.parseDouble(imdbRating);
     }
 
     public String getImdbID() {

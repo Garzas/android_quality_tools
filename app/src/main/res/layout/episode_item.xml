@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="72dp"
+    android:paddingLeft="16dp"
+    android:paddingRight="16dp"
+    android:background="@color/colorPrimary"
+    android:gravity="center"
+    android:orientation="horizontal">
+
+    <TextView
+        android:id="@+id/episode_number"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:gravity="center"
+        android:textColor="@color/white"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        tools:text="10" />
+
+    <TextView
+        android:id="@+id/episode_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="12dp"
+        android:textColor="@color/white"
+        android:layout_weight="1"
+        android:gravity="center"
+        tools:text="Episode Title Very Very Long" />
+
+    <TextView
+        android:id="@+id/episode_rating"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:background="@color/colorPrimaryDark"
+        android:gravity="center" />
+
+
+</LinearLayout>

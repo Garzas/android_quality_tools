@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.view.LayoutInflater;
 
-
 import com.appunite.debugutils.OmdbService;
 import com.appunite.rx.dagger.NetworkScheduler;
 import com.appunite.rx.dagger.UiScheduler;
