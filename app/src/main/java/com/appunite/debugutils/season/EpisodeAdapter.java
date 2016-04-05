@@ -61,7 +61,7 @@ public class EpisodeAdapter extends RecyclerView.Adapter<EpisodeAdapter.EpisodeH
 
         public void bind(@Nonnull SeasonPresenter.EpisodeItem item) {
             title.setText(item.getTitle());
-            episodeNumber.setText(item.getNumber());
+            episodeNumber.setText(Integer.toString(item.getNumber()));
             rating.setText(item.getRating().toString());
 
         }

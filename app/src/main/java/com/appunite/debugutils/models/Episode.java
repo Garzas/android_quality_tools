@@ -28,8 +28,8 @@ public class Episode {
         return Integer.parseInt(Episode);
     }
 
-    public Double getImdbRating() {
-        return Double.parseDouble(imdbRating);
+    public String getImdbRating() {
+        return imdbRating;
     }
 
     public String getImdbID() {

@@ -11,7 +11,6 @@ import com.appunite.debugutils.BaseFragment;
 import com.appunite.debugutils.R;
 import com.appunite.debugutils.dagger.BaseActivityComponent;
 import com.appunite.debugutils.dagger.FragmentModule;
-import com.appunite.debugutils.models.Season;
 
 import java.util.List;
 
@@ -20,7 +19,6 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 import butterknife.InjectView;
-import rx.Observable;
 
 public class SeasonFragment extends BaseFragment {
 
@@ -59,14 +57,22 @@ public class SeasonFragment extends BaseFragment {
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setAdapter(episodeAdapter);
 
-        Observable.just(season)
-                .compose(this.<Integer>bindToLifecycle())
-                .subscribe(seasonPresenter.seasonObserver());
+//        Observable.just(season)
+//                .compose(this.<Integer>bindToLifecycle())
+//                .subscribe(seasonPresenter.seasonObserver());
+
 
         seasonPresenter.getEpisodesObservable()
                 .compose(this.<List<SeasonPresenter.EpisodeItem>>bindToLifecycle())
                 .subscribe(episodeAdapter);
     }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+//        seasonPresenter.seasonObserver().onNext(season);
+    }
+
 
 
     @Override

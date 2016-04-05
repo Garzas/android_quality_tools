@@ -60,10 +60,10 @@ public class SeasonPresenter {
                                 .observeOn(AndroidSchedulers.mainThread());
                     }
                 })
-                .filter(new Func1<Season, Boolean>() {
+                .takeWhile(new Func1<Season, Boolean>() {
                     @Override
                     public Boolean call(Season season) {
-                        return season.hasResponse();
+                        return season.getResponse().toLowerCase().equals("true");
                     }
                 })
                 .scan(Collections.<Season>emptyList(), new Func2<List<Season>, Season, List<Season>>() {
@@ -73,7 +73,6 @@ public class SeasonPresenter {
                     }
                 })
                 .compose(ObservableExtensions.<List<Season>>behaviorRefCount());
-
 
         seasonObservable
                 .scan(0, new Func2<Integer, List<Season>, Integer>() {
@@ -85,16 +84,18 @@ public class SeasonPresenter {
                 })
                 .subscribe(nextSeasonNumberSubject);
 
-        episodesObservable = Observable.combineLatest(
-                seasonIndexSubject,
-                seasonObservable,
-                new Func2<Integer, List<Season>, List<Episode>>() {
+        episodesObservable = seasonObservable.switchMap(new Func1<List<Season>, Observable<List<Episode>>>() {
+            @Override
+            public Observable<List<Episode>> call(final List<Season> seasonList) {
+                return seasonIndexSubject.map(new Func1<Integer, List<Episode>>() {
                     @Override
-                    public List<Episode> call(Integer seasonNumber, List<Season> seasonList) {
-                        return seasonList.get(seasonNumber).getEpisodes();
+                    public List<Episode> call(Integer integer) {
+                        return seasonList.get(integer).getEpisodes();
                     }
-                }
-        )
+                })
+                        .observeOn(AndroidSchedulers.mainThread());
+            }
+        })
                 .map(new Func1<List<Episode>, List<EpisodeItem>>() {
                     @Override
                     public List<EpisodeItem> call(List<Episode> episodes) {
@@ -144,16 +145,16 @@ public class SeasonPresenter {
 
         @Nonnull
         private final String title;
-        private final Double rating;
+        private final String rating;
         private final int number;
 
-        public EpisodeItem(@Nonnull String title, Double rating, int number) {
+        public EpisodeItem(@Nonnull String title, String rating, int number) {
             this.title = title;
             this.rating = rating;
             this.number = number;
         }
 
-        public Double getRating() {
+        public String getRating() {
             return rating;
         }
 

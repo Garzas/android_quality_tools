@@ -9,7 +9,6 @@ import android.view.View;
 
 import com.appunite.debugutils.App;
 import com.appunite.debugutils.BaseActivity;
-import com.appunite.debugutils.OmdbService;
 import com.appunite.debugutils.R;
 import com.appunite.debugutils.dagger.ActivityModule;
 import com.appunite.debugutils.dagger.BaseActivityComponent;
@@ -24,12 +23,13 @@ import javax.inject.Inject;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
-import rx.Observable;
 import rx.functions.Action1;
 
 public class SeasonActivity extends BaseActivity {
 
     private static final String SERIES_ID = "series_id";
+
+    String seriesId;
 
     @InjectView(R.id.season_pager)
     ViewPager viewPager;
@@ -57,16 +57,28 @@ public class SeasonActivity extends BaseActivity {
         component.inject(this);
         ButterKnife.inject(this);
 
-        final String seriesId = getIntent().getStringExtra(SERIES_ID);
+        seriesId = getIntent().getStringExtra(SERIES_ID);
 
         adapter = new SeasonAdapter(getSupportFragmentManager());
         viewPager.setOffscreenPageLimit(3);
         viewPager.setAdapter(adapter);
         tabLayout.setupWithViewPager(viewPager);
+        viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
 
-        Observable.just(seriesId)
-                .compose(this.<String>bindToLifecycle())
-                .subscribe(presenter.seriesIdObserver());
+            }
+
+            @Override
+            public void onPageSelected(int position) {
+                presenter.seasonObserver().onNext(position);
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int state) {
+
+            }
+        });
 
         presenter.getUpdateSeasonAdapter()
                 .compose(this.<List<Season>>bindToLifecycle())
@@ -82,6 +94,12 @@ public class SeasonActivity extends BaseActivity {
         presenter.getProgressObservable()
                 .compose(this.<Boolean>bindToLifecycle())
                 .subscribe(RxView.visibility(progressView));
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        presenter.seriesIdObserver().onNext(seriesId);
     }
 
     @Nonnull
